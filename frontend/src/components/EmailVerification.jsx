@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { showError, showSuccess } from "../utils/sweetAlert";
+import { Modal, Button, FormInput, ParticlesBackground } from "./common";
 
 const EmailVerification = () => {
   const [searchParams] = useSearchParams();
@@ -22,6 +23,8 @@ const EmailVerification = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [verificationAttempted, setVerificationAttempted] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   const token = searchParams.get('token');
 
@@ -39,18 +42,18 @@ const EmailVerification = () => {
       if (result.success) {
         setVerificationStatus('success');
         setMessage(result.message);
-        showSuccess("Email Verified!", result.message, { timer: 5000 });
+        setShowSuccessModal(true);
         // Redirect to login after 5 seconds to allow user to see the success message
         setTimeout(() => navigate('/login'), 5000);
       } else {
         setVerificationStatus('error');
         setMessage(result.message || 'Verification failed. Please try resending the verification email.');
-        showError("Verification Failed", result.message || 'Verification failed. Please try resending the verification email.');
+        setShowErrorModal(true);
       }
     } catch (error) {
       setVerificationStatus('error');
       setMessage(error.response?.data?.message || 'Verification failed. Please try resending the verification email.');
-      showError("Verification Failed", error.response?.data?.message || 'Verification failed. Please try resending the verification email.');
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -85,16 +88,6 @@ const EmailVerification = () => {
     }
   };
 
-  const inputVariants = {
-    focus: { scale: 1.02, transition: { duration: 0.2 } },
-    blur: { scale: 1, transition: { duration: 0.2 } },
-  };
-
-  const buttonVariants = {
-    hover: { scale: 1.02, transition: { duration: 0.2 } },
-    tap: { scale: 0.98, transition: { duration: 0.1 } },
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
       {/* Enhanced Background Effects */}
@@ -105,17 +98,16 @@ const EmailVerification = () => {
         style={{ animationDelay: "2s" }}
       ></div>
 
-      {/* Floating Geometric Shapes */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div
-          className="absolute top-1/3 left-1/6 w-16 h-16 border-2 border-purple-400/30 backdrop-blur-sm bg-white/5 rotate-45 animate-spin rounded-lg"
-          style={{ animationDuration: "20s" }}
-        ></div>
-        <div
-          className="absolute bottom-1/3 right-1/6 w-12 h-12 bg-gradient-to-r from-pink-400/20 to-purple-400/20 backdrop-blur-sm rounded-full animate-bounce border border-pink-400/30"
-          style={{ animationDelay: "1s" }}
-        ></div>
-      </div>
+      {/* Particles Background */}
+      <ParticlesBackground 
+        count={30}
+        color="#a855f7"
+        opacity={{ min: 0.05, max: 0.2 }}
+        size={{ min: 1, max: 3 }}
+        speed={{ min: 0.05, max: 0.15 }}
+        connectParticles={true}
+        connectionOpacity={0.05}
+      />
 
       <motion.div
         className="relative z-10 w-full max-w-2xl"
@@ -220,58 +212,28 @@ const EmailVerification = () => {
           {/* Resend Verification Form */}
           {(!token || verificationStatus === 'error') && (
             <form onSubmit={handleResendVerification} className="space-y-6 relative z-10">
-              <div className="space-y-2">
-                <label
-                  htmlFor="email"
-                  className="flex items-center text-gray-300 font-medium"
-                >
-                  <Mail className="w-4 h-4 mr-2 text-purple-400" />
-                  Email Address
-                </label>
-                <motion.div
-                  className="relative"
-                  variants={inputVariants}
-                  whileFocus="focus"
-                >
-                  <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isResendingVerification}
-                    className="w-full px-4 py-4 bg-white/10 backdrop-blur-lg rounded-xl border border-white/20 text-white placeholder-gray-400 focus:border-purple-400/50 focus:outline-none transition-all duration-300 focus:bg-white/15"
-                    placeholder="Enter your email address"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-pink-500/0 focus-within:from-purple-500/10 focus-within:to-pink-500/10 rounded-xl transition-all duration-300 pointer-events-none"></div>
-                </motion.div>
-              </div>
-
-              <motion.button
-                type="submit"
-                className="btn btn-primary w-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+              <FormInput
+                id="email"
+                label="Email Address"
+                type="email"
+                placeholder="Enter your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
                 disabled={isResendingVerification}
-                variants={buttonVariants}
-                whileHover="hover"
-                whileTap="tap"
+                icon={Mail}
+              />
+
+              <Button
+                type="submit"
+                variant="primary"
+                fullWidth
+                loading={isResendingVerification}
+                icon={Mail}
+                disabled={isResendingVerification}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-cyan-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></div>
-
-                {isResendingVerification ? (
-                  <div className="flex items-center relative z-10">
-                    <RefreshCw className="w-5 h-5 mr-3 animate-spin" />
-                    Sending...
-                  </div>
-                ) : (
-                  <div className="flex items-center relative z-10">
-                    <Mail className="w-5 h-5 mr-3 group-hover:scale-125 group-hover:rotate-12 transition-all duration-300" />
-                    Resend Verification Email
-                    <ArrowRight className="w-5 h-5 ml-3 group-hover:translate-x-2 transition-all duration-300" />
-                  </div>
-                )}
-
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-xl blur-xl group-hover:blur-2xl transition-all duration-500"></div>
-              </motion.button>
+                {isResendingVerification ? 'Sending...' : 'Resend Verification Email'}
+              </Button>
             </form>
           )}
 
@@ -279,15 +241,14 @@ const EmailVerification = () => {
           <div className="mt-8 text-center space-y-4 relative z-10">
             {verificationStatus === 'success' ? (
               <div className="space-y-4">
-                <motion.button
+                <Button
                   onClick={() => navigate('/login')}
-                  className="btn btn-primary w-full max-w-xs mx-auto flex items-center justify-center"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  variant="primary"
+                  className="w-full max-w-xs mx-auto"
+                  icon={ArrowRight}
                 >
-                  <ArrowRight className="w-5 h-5 mr-2" />
                   Continue to Login
-                </motion.button>
+                </Button>
                 <p className="text-gray-400 text-sm">
                   You will be automatically redirected in a few seconds
                 </p>
@@ -303,20 +264,22 @@ const EmailVerification = () => {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link
+                  <Button
+                    as={Link}
                     to="/login"
-                    className="btn btn-ghost group inline-flex items-center"
+                    variant="ghost"
+                    icon={ArrowRight}
                   >
-                    <ArrowRight className="w-4 h-4 mr-2 group-hover:translate-x-1 transition-transform duration-300" />
                     Back to Login
-                  </Link>
-                  <Link
+                  </Button>
+                  <Button
+                    as={Link}
                     to="/"
-                    className="btn btn-ghost group inline-flex items-center"
+                    variant="ghost"
+                    icon={Home}
                   >
-                    <Home className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-300" />
                     Home
-                  </Link>
+                  </Button>
                 </div>
               </>
             )}
@@ -326,6 +289,70 @@ const EmailVerification = () => {
           <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-500/0 via-pink-500/0 to-cyan-500/0 hover:from-purple-500/10 hover:via-pink-500/5 hover:to-cyan-500/10 blur-2xl transition-all duration-1000 -z-10"></div>
         </div>
       </motion.div>
+
+      {/* Success Modal */}
+      <Modal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="Email Verified Successfully!"
+        size="md"
+      >
+        <div className="text-center">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <h3 className="text-xl font-semibold mb-2 text-white">Verification Complete</h3>
+          <p className="text-gray-300 mb-6">{message || 'Your email has been successfully verified. You can now log in to your account.'}</p>
+          <div className="flex justify-center space-x-4">
+            <Button
+              variant="primary"
+              onClick={() => {
+                setShowSuccessModal(false);
+                navigate('/login');
+              }}
+            >
+              Continue to Login
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Error Modal */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title="Verification Failed"
+        size="md"
+      >
+        <div className="text-center">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center">
+              <AlertCircle className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <h3 className="text-xl font-semibold mb-2 text-white">Verification Error</h3>
+          <p className="text-gray-300 mb-6">{message || 'The verification link is invalid or has expired. Please try resending the verification email.'}</p>
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowErrorModal(false)}
+            >
+              Try Again
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setShowErrorModal(false);
+                navigate('/login');
+              }}
+            >
+              Back to Login
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

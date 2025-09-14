@@ -29,7 +29,6 @@ import { useAuth, AuthProvider, SidebarProvider, useSidebar } from "./contexts/A
 import { lazy, Suspense } from "react";
 import LoadingSpinner from "./components/LoadingSpinner";
 import Sidebar from "./components/Sidebar";
-import ParticlesBackground from "./components/common/ParticlesBackground";
 
 // Lazy load components for better performance
 const Navbar = lazy(() => import("./components/Navbar"));
@@ -243,19 +242,6 @@ function AppContent() {
           className="absolute top-1/2 left-1/2 w-96 h-96 bg-gradient-to-r from-purple-400/15 to-purple-600/15 rounded-full mix-blend-multiply filter blur-3xl animate-pulse shadow-glass-soft"
           style={{ animationDelay: "4s" }}
         ></div>
-      </div>
-
-      {/* Dynamic Particles Background */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <ParticlesBackground 
-          count={30}
-          color="#a855f7"
-          opacity={{ min: 0.05, max: 0.2 }}
-          size={{ min: 1, max: 3 }}
-          speed={{ min: 0.05, max: 0.15 }}
-          connectParticles={true}
-          connectionOpacity={0.05}
-        />
       </div>
 
       <Suspense fallback={<LoadingSpinner message="Loading..." />}>
