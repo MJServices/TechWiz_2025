@@ -5,7 +5,7 @@ dotenv.config();
 
 // Create transporter
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
     secure: false,
@@ -153,6 +153,34 @@ export const sendEventUpdateEmail = async (event, participants) => {
   }
 };
 
+// Send event cancellation email
+export const sendEventCancellationEmail = async (event, participants) => {
+  const transporter = createTransporter();
+
+  for (const participant of participants) {
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to: participant.email,
+      subject: `Event Cancelled: ${event.title}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #ef4444;">Event Cancelled</h2>
+          <p>Hello ${participant.username},</p>
+          <p>We regret to inform you that the following event has been cancelled:</p>
+          <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3>${event.title}</h3>
+            <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+            <p><strong>Venue:</strong> ${event.venue}</p>
+          </div>
+          <p>We apologize for any inconvenience this may cause. Please check the EventSphere platform for other upcoming events.</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+  }
+};
+
 // Send new registration email to organizer
 export const sendNewRegistrationEmail = async (registration, organizer) => {
   const transporter = createTransporter();
@@ -169,6 +197,7 @@ export const sendNewRegistrationEmail = async (registration, organizer) => {
           <h3>${registration.event.title}</h3>
           <p><strong>Participant:</strong> ${registration.participant.username} (${registration.participant.email})</p>
           <p><strong>Registration Date:</strong> ${new Date(registration.registeredOn).toLocaleDateString()}</p>
+          <p><strong>Status:</strong> ${registration.status === 'waitlist' ? 'Waitlisted' : 'Pending Approval'}</p>
         </div>
         <p>Please review and approve the registration from your organizer dashboard.</p>
       </div>
@@ -194,9 +223,11 @@ export const sendRegistrationApprovalEmail = async (registration) => {
         <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3>${registration.event.title}</h3>
           <p><strong>Date:</strong> ${new Date(registration.event.date).toLocaleDateString()}</p>
+          <p><strong>Time:</strong> ${registration.event.time}</p>
           <p><strong>Venue:</strong> ${registration.event.venue}</p>
         </div>
         <p>Your ticket has been attached to this email. Please bring it to the event.</p>
+        <p>You can also download your ticket and view your QR code for check-in from your dashboard.</p>
       </div>
     `,
   };
@@ -222,6 +253,62 @@ export const sendRegistrationRejectionEmail = async (registration) => {
           <p><strong>Date:</strong> ${new Date(registration.event.date).toLocaleDateString()}</p>
         </div>
         <p>This may be due to capacity limitations or specific requirements. Please contact the organizer for more information.</p>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+
+// Send waitlist notification email
+export const sendWaitlistNotificationEmail = async (registration) => {
+  const transporter = createTransporter();
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: registration.participant.email,
+    subject: `Waitlisted: ${registration.event.title}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #f59e0b;">You're on the Waitlist</h2>
+        <p>Hello ${registration.participant.username},</p>
+        <p>Thank you for your interest in the following event:</p>
+        <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3>${registration.event.title}</h3>
+          <p><strong>Date:</strong> ${new Date(registration.event.date).toLocaleDateString()}</p>
+          <p><strong>Venue:</strong> ${registration.event.venue}</p>
+          <p><strong>Waitlist Position:</strong> ${registration.waitlistPosition}</p>
+        </div>
+        <p>The event is currently at full capacity, but you've been added to the waitlist. If a spot becomes available, you'll be automatically moved up the list.</p>
+        <p>You'll receive a notification if you're moved from the waitlist to approved status.</p>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+
+// Send waitlist promotion email
+export const sendWaitlistPromotionEmail = async (registration) => {
+  const transporter = createTransporter();
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: registration.participant.email,
+    subject: `Good News! You're In: ${registration.event.title}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #10b981;">You're In!</h2>
+        <p>Hello ${registration.participant.username},</p>
+        <p>Great news! A spot has opened up, and you've been moved from the waitlist to approved status for:</p>
+        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3>${registration.event.title}</h3>
+          <p><strong>Date:</strong> ${new Date(registration.event.date).toLocaleDateString()}</p>
+          <p><strong>Time:</strong> ${registration.event.time}</p>
+          <p><strong>Venue:</strong> ${registration.event.venue}</p>
+        </div>
+        <p>Your ticket has been attached to this email. Please bring it to the event.</p>
+        <p>You can also download your ticket and view your QR code for check-in from your dashboard.</p>
       </div>
     `,
   };
@@ -325,6 +412,35 @@ export const sendContactEmail = async ({ name, email, message }) => {
           <p style="white-space: pre-wrap;">${message}</p>
         </div>
         <p>Please respond to this inquiry promptly.</p>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+};
+
+// Send venue booking confirmation email
+export const sendVenueBookingConfirmationEmail = async (venue, event, organizer) => {
+  const transporter = createTransporter();
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: organizer.email,
+    subject: `Venue Booked: ${venue.name} for ${event.title}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #10b981;">Venue Booking Confirmed</h2>
+        <p>Hello ${organizer.username},</p>
+        <p>Your venue booking has been confirmed for:</p>
+        <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h3>${event.title}</h3>
+          <p><strong>Venue:</strong> ${venue.name}</p>
+          <p><strong>Location:</strong> ${venue.location}</p>
+          <p><strong>Date:</strong> ${new Date(event.date).toLocaleDateString()}</p>
+          <p><strong>Time:</strong> ${event.time} - ${event.endTime}</p>
+          <p><strong>Capacity:</strong> ${venue.capacity} people</p>
+        </div>
+        <p>Please ensure your event details are up to date. You can manage your event from the organizer dashboard.</p>
       </div>
     `,
   };

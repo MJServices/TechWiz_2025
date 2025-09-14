@@ -28,10 +28,21 @@ const eventSchema = new mongoose.Schema({
     type: String, // e.g., "12:00 PM"
     required: true
   },
+  // Original venue field (string) for backward compatibility
   venue: {
     type: String,
     required: true
   },
+  // New venue reference field
+  venueId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Venue'
+  },
+  // Venue capacity at the time of booking
+  venueCapacity: {
+    type: Number
+  },
+  // Custom capacity override (if different from venue capacity)
   maxSeats: {
     type: Number,
     required: true,
@@ -61,6 +72,25 @@ const eventSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // Maximum waitlist size
+  maxWaitlist: {
+    type: Number,
+    default: 0 // 0 means no waitlist
+  },
+  // Current waitlist count
+  currentWaitlisted: {
+    type: Number,
+    default: 0
+  },
+  // Real-time tracking
+  registrationDeadline: {
+    type: Date
+  },
+  // Auto-approval settings
+  autoApproveRegistrations: {
+    type: Boolean,
+    default: false
+  },
   bannerImage: {
     type: String // URL to banner image
   },
@@ -80,8 +110,6 @@ const eventSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'ongoing', 'completed', 'cancelled'],
     default: 'pending'
   },
-  // For dynamic capacity: if venue_id is needed, add it; but venue is string here
-  // venueId: { type: mongoose.Schema.Types.ObjectId, ref: 'Venue' }, // Optional if separate Venue model
   createdAt: {
     type: Date,
     default: Date.now
@@ -100,5 +128,52 @@ eventSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
+
+// Method to check if registration is possible
+eventSchema.methods.canRegister = function() {
+  // Check if event is in a registrable state
+  if (this.status !== 'approved' && this.status !== 'ongoing') {
+    return { canRegister: false, reason: 'Event is not open for registration' };
+  }
+  
+  // Check if registration deadline has passed
+  if (this.registrationDeadline && new Date() > this.registrationDeadline) {
+    return { canRegister: false, reason: 'Registration deadline has passed' };
+  }
+  
+  // Check if seats are available
+  if (this.seatsAvailable <= 0) {
+    // Check if waitlist is enabled and has space
+    if (this.waitlistEnabled && (this.maxWaitlist === 0 || this.currentWaitlisted < this.maxWaitlist)) {
+      return { canRegister: true, waitlist: true };
+    }
+    return { canRegister: false, reason: 'No seats available and waitlist is full or disabled' };
+  }
+  
+  return { canRegister: true, waitlist: false };
+};
+
+// Method to update registration counts
+eventSchema.methods.updateRegistrationCounts = async function(session = null) {
+  const Registration = mongoose.model('Registration');
+  
+  // Count approved registrations
+  const approvedCount = await Registration.countDocuments(
+    { event: this._id, status: 'approved' },
+    { session }
+  );
+  
+  // Count waitlisted registrations
+  const waitlistedCount = await Registration.countDocuments(
+    { event: this._id, status: 'waitlist' },
+    { session }
+  );
+  
+  this.currentBooked = approvedCount;
+  this.currentWaitlisted = waitlistedCount;
+  this.seatsAvailable = Math.max(this.maxSeats - this.currentBooked, 0);
+  
+  return this.save({ session });
+};
 
 export default mongoose.model('Event', eventSchema);
