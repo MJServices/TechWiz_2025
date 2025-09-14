@@ -23,6 +23,7 @@ import notificationRoutes from './src/routes/notification.routes.js';
 import statsRoutes from './src/routes/stats.routes.js';
 import contactRoutes from './src/routes/contact.routes.js';
 import aboutRoutes from './src/routes/about.routes.js';
+import venueRoutes from './src/routes/venue.routes.js';
 import { errorHandler, notFound } from './src/middlewares/error.js';
 import dotenv from "dotenv"
 
@@ -67,6 +68,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/about', aboutRoutes);
+app.use('/api/venues', venueRoutes); // Add the new venue routes
 
 app.use(notFound);
 app.use(errorHandler);
