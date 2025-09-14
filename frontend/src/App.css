@@ -1,0 +1,89 @@
+@import "./theme.css";
+/* Remove old styles since we're using Tailwind */
+.App {
+  @apply min-h-screen flex flex-col;
+}
+
+.main-content {
+  @apply flex-1 pt-20; /* Account for fixed navbar */
+}
+
+/* Keep some utility classes for backward compatibility */
+.loading {
+  @apply flex justify-center items-center h-96 text-xl text-neutral-600;
+}
+
+.error {
+  @apply text-purple-200 bg-purple-900 border border-purple-600 p-3 rounded-xl mb-4;
+}
+
+.success {
+  @apply text-purple-200 bg-purple-900 border border-purple-600 p-3 rounded-xl mb-4;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .main-content {
+    @apply pt-16;
+  }
+/* Base typography styles with responsive sizing */
+@layer base {
+  h1 {
+    @apply text-2xl sm:text-3xl lg:text-4xl font-bold;
+  }
+
+  h2 {
+    @apply text-xl sm:text-2xl lg:text-3xl font-semibold;
+  }
+
+  h3 {
+    @apply text-lg sm:text-xl lg:text-2xl font-semibold;
+  }
+
+  h4 {
+    @apply text-base sm:text-lg lg:text-xl font-medium;
+  }
+
+  h5 {
+    @apply text-sm sm:text-base lg:text-lg font-medium;
+  }
+
+  h6 {
+    @apply text-sm sm:text-base font-medium;
+  }
+
+  p {
+    @apply text-sm sm:text-base leading-relaxed font-normal;
+  }
+
+  .text-body {
+    @apply text-sm sm:text-base font-normal leading-relaxed;
+  }
+}
+}
+/* Dark Purple Modern Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; /* No bulky track */
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6d28d9, #8b5cf6); /* Purple to purple */
+  border-radius: 9999px;
+  border: 2px solid transparent; /* Gap effect */
+  background-clip: content-box; /* Keeps gradient inside */
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #9333ea, #a855f7); /* Brighter on hover */
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #9333ea transparent; /* Purple scrollbar, no track */
+}

@@ -1,0 +1,9 @@
+/* Test file to verify Tailwind is working */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Test class */
+.test-red {
+  @apply bg-red-500 text-white p-4;
+}

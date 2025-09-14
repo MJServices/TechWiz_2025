@@ -1,0 +1,365 @@
+import { Link, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Calendar,
+  LogIn,
+  UserPlus,
+  Info,
+  Phone,
+  LayoutDashboard,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  Image,
+} from "lucide-react";
+import { useAuth, useSidebar } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+
+const Sidebar = () => {
+  const { isAuthenticated, user, logout } = useAuth();
+  const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Hide sidebar on home page and auth pages
+  const hideSidebar = ['/', '/login', '/register'].includes(location.pathname);
+
+  if (hideSidebar) {
+    return null;
+  }
+
+  // Function to get display name for user role
+  const getRoleDisplayName = (role) => {
+    switch (role) {
+      case 'participant':
+        return 'Participant';
+      case 'organizer':
+        return 'Organizer';
+      case 'admin':
+        return 'Admin';
+      default:
+        return 'User';
+    }
+  };
+
+  const navigationItems = [
+    {
+      name: "Home",
+      path: "/",
+      icon: <Home className="w-6 h-6" />,
+      public: true,
+    },
+    {
+      name: "Events",
+      path: "/events",
+      icon: <Calendar className="w-6 h-6" />,
+      public: true,
+    },
+    {
+      name: "About Us",
+      path: "/about",
+      icon: <Info className="w-6 h-6" />,
+      public: true,
+    },
+    {
+      name: "Gallery",
+      path: "/gallery",
+      icon: <Image className="w-6 h-6" />,
+      public: false,
+    },
+    {
+      name: "Contact",
+      path: "/contact",
+      icon: <Phone className="w-6 h-6" />,
+      public: true,
+    },
+    {
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: <LayoutDashboard className="w-6 h-6" />,
+      public: false,
+      hideWhenAuth: false,
+    },
+    {
+      name: "Login",
+      path: "/login",
+      icon: <LogIn className="w-6 h-6" />,
+      public: true,
+      hideWhenAuth: true,
+    },
+    {
+      name: "Register",
+      path: "/register",
+      icon: <UserPlus className="w-6 h-6" />,
+      public: true,
+      hideWhenAuth: true,
+    },
+  ];
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+    setIsSidebarOpen(false);
+  };
+
+  const filteredItems = navigationItems.filter((item) => {
+    if (item.public) {
+      return !item.hideWhenAuth || !isAuthenticated;
+    }
+    return isAuthenticated;
+  });
+
+  const sidebarVariants = {
+    closed: {
+      width: "72px",
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut",
+      },
+    },
+    open: {
+      width: "280px",
+      transition: {
+        duration: 0.3,
+        ease: "easeInOut",
+      },
+    },
+  };
+
+
+  return (
+    <>
+
+      {/* Sidebar */}
+      <motion.div
+        initial="closed"
+        animate={isSidebarOpen ? "open" : "closed"}
+        variants={sidebarVariants}
+        className={`
+          fixed top-16 left-0 h-[calc(100vh-4rem)] z-50
+          bg-gradient-to-br from-purple-900/95 via-slate-900/90 to-purple-900/95
+          backdrop-blur-3xl border-r border-purple-400/20
+          shadow-2xl shadow-purple-500/20
+          overflow-hidden
+        `}
+      >
+        {/* Toggle Button */}
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="
+            absolute -right-4 top-4 z-20
+            w-10 h-10 rounded-full
+            bg-gradient-to-r from-purple-500 to-purple-600
+            backdrop-blur-xl border-2 border-purple-400/30
+            shadow-xl shadow-purple-500/40
+            hover:shadow-purple-500/60 hover:scale-110
+            transition-all duration-300 ease-out
+            flex items-center justify-center
+            group overflow-hidden
+          "
+        >
+          <AnimatePresence mode="wait">
+            {isSidebarOpen ? (
+              <motion.div
+                key="close"
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronLeft className="w-4 h-4 text-white" />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="open"
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronRight className="w-4 h-4 text-white" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </button>
+
+        {/* Mobile Close Button */}
+        <button
+          onClick={() => setIsSidebarOpen(false)}
+          className="md:hidden absolute top-4 right-6 z-10 w-10 h-10 rounded-full bg-purple-500/10 backdrop-blur-lg border border-purple-400/20 flex items-center justify-center hover:bg-purple-500/20 transition-all duration-300 hover:scale-105"
+        >
+          <X className="w-5 h-5 text-white" />
+        </button>
+
+        {/* Header */}
+        <div className={`p-6 pb-8 border-b border-purple-400/20 relative overflow-hidden ${!isSidebarOpen ? 'px-3 py-6' : ''}`}>
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-purple-600/10 rounded-br-2xl"></div>
+          <AnimatePresence>
+            {isSidebarOpen ? (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2, delay: 0.1 }}
+                className="relative z-10"
+              >
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-purple-500 bg-clip-text text-transparent mb-4">
+                  EventSphere
+                </h2>
+                {isAuthenticated && user && (
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                      <p className="text-sm text-white font-medium">
+                          Welcome, {user.fullName || user.username}
+                        </p>
+                    </div>
+                    <div className="text-xs text-gray-300">
+                      {user.role && (
+                        <span>{getRoleDisplayName(user.role)}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2 }}
+                className="relative z-10 flex justify-center"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold text-lg">E</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Navigation Items */}
+        <nav className={`flex-1 pt-4 ${isSidebarOpen ? 'p-6 pt-4' : 'px-3 py-4'}`}>
+          <div className="grid grid-cols-1 gap-3">
+            {filteredItems.map((item, index) => (
+              <motion.div
+                key={item.name}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{
+                  duration: 0.3,
+                  delay: index * 0.1,
+                }}
+              >
+                {item.isLogout ? (
+                  <button
+                    onClick={handleLogout}
+                    className={`
+                      group relative flex items-center rounded-xl
+                      bg-purple-500/10 backdrop-blur-lg
+                      border border-purple-400/20 hover:border-purple-400/60
+                      transition-all duration-300 ease-out
+                      hover:shadow-lg hover:shadow-purple-500/30
+                      hover:scale-105 hover:bg-purple-500/20
+                      overflow-hidden w-full
+                      ${isSidebarOpen ? 'justify-start px-4 h-12' : 'justify-center px-0 h-14'}
+                    `}
+                    title={!isSidebarOpen ? item.name : undefined}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className={`flex-shrink-0 text-purple-400 group-hover:text-purple-300 transition-colors duration-300 relative z-10 flex items-center justify-center ${!isSidebarOpen ? 'w-full h-full' : ''}`}>
+                      {item.icon}
+                    </div>
+                    <AnimatePresence>
+                      {isSidebarOpen && (
+                        <motion.span
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          transition={{ duration: 0.2, delay: 0.1 }}
+                          className="ml-4 text-white group-hover:text-purple-200 transition-colors duration-300 font-medium text-base relative z-10"
+                        >
+                          {item.name}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </button>
+                ) : (
+                  <Link
+                    to={item.path}
+                    onClick={() => setIsSidebarOpen(false)}
+                    className={`
+                      group relative flex items-center rounded-xl
+                      bg-purple-500/10 backdrop-blur-lg
+                      border border-purple-400/20 hover:border-purple-400/60
+                      transition-all duration-300 ease-out
+                      hover:shadow-lg hover:shadow-purple-500/30
+                      hover:scale-105 hover:bg-purple-500/20
+                      overflow-hidden w-full
+                      ${isSidebarOpen ? 'justify-start px-4 h-12' : 'justify-center px-0 h-14'}
+                    `}
+                    title={!isSidebarOpen ? item.name : undefined}
+                  >
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className={`flex-shrink-0 text-purple-400 group-hover:text-purple-300 transition-colors duration-300 relative z-10 flex items-center justify-center ${!isSidebarOpen ? 'w-full h-full' : ''}`}>
+                    {item.icon}
+                  </div>
+                  <AnimatePresence>
+                    {isSidebarOpen && (
+                      <motion.span
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10 }}
+                        transition={{ duration: 0.2, delay: 0.1 }}
+                        className="ml-4 text-white group-hover:text-purple-200 transition-colors duration-300 font-medium text-base relative z-10"
+                      >
+                        {item.name}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                  </Link>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </nav>
+
+        {/* Footer */}
+        <div className={`pt-4 border-t border-purple-400/20 relative ${isSidebarOpen ? 'p-6 pt-4' : 'px-3 py-4'}`}>
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-purple-600/10 rounded-tr-2xl"></div>
+          <AnimatePresence>
+            {isSidebarOpen ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.2, delay: 0.2 }}
+                className="text-center relative z-10"
+              >
+                <div className="inline-flex items-center space-x-2 px-4 py-2 bg-purple-500/10 backdrop-blur-lg rounded-full border border-purple-400/20">
+                  <div className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-pulse"></div>
+                  <p className="text-xs text-white font-medium">
+                    © 2024 EventSphere
+                  </p>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.2 }}
+                className="relative z-10 flex justify-center"
+              >
+                <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </>
+  );
+};
+
+export default Sidebar;
