@@ -1,43 +1,103 @@
 import Media from '../models/media.model.js';
+import { uploadToCloudinary, deleteFromCloudinary } from '../config/cloudinary.js';
 
 export const uploadMedia = async (req, res) => {
-  const {
-    eventId,
-    fileType,
-    fileUrl,
-    thumbnailUrl,
-    title,
-    description,
-    category,
-    style,
-    tags,
-    colorPalette
-  } = req.body;
+  try {
+    const {
+      eventId,
+      title,
+      description,
+      category,
+      style,
+      tags,
+      colorPalette
+    } = req.body;
 
-  const mediaData = {
-    fileType,
-    fileUrl,
-    uploadedBy: req.user._id,
-    title: title || description || 'Untitled Design',
-    description,
-    category: category || 'other',
-    style: style || 'modern',
-    tags: tags ? tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
-    colorPalette: colorPalette || []
-  };
+    // Check if file was uploaded via Cloudinary middleware
+    if (!req.uploadResult && !req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file provided. Please upload an image or video file.'
+      });
+    }
 
-  // Add eventId if provided (for event media)
-  if (eventId) {
-    mediaData.event = eventId;
+    let fileUrl, thumbnailUrl, fileType, publicId;
+
+    // If using Cloudinary middleware result
+    if (req.uploadResult) {
+      fileUrl = req.uploadResult.url;
+      thumbnailUrl = req.uploadResult.thumbnailUrl;
+      publicId = req.uploadResult.publicId;
+      fileType = req.file ? (req.file.mimetype.startsWith('video/') ? 'video' : 'image') : 'image';
+    }
+    // If manual file buffer upload
+    else if (req.file && req.file.buffer) {
+      const folder = eventId ? `eventsphere/events/${eventId}` : 'eventsphere/media';
+      const isVideo = req.file.mimetype.startsWith('video/');
+      
+      const uploadResult = await uploadToCloudinary(req.file.buffer, {
+        folder,
+        resource_type: isVideo ? 'video' : 'image'
+      });
+
+      if (!uploadResult.success) {
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to upload file to cloud storage',
+          error: uploadResult.error
+        });
+      }
+
+      fileUrl = uploadResult.url;
+      thumbnailUrl = uploadResult.thumbnailUrl;
+      publicId = uploadResult.publicId;
+      fileType = isVideo ? 'video' : 'image';
+    }
+
+    const mediaData = {
+      fileType,
+      fileUrl,
+      thumbnailUrl,
+      publicId, // Store for future deletion
+      uploadedBy: req.user._id,
+      title: title || description || 'Untitled Media',
+      description: description || '',
+      category: category || 'other',
+      style: style || 'modern',
+      tags: tags ? (Array.isArray(tags) ? tags : tags.split(',').map(tag => tag.trim()).filter(tag => tag)) : [],
+      colorPalette: colorPalette || []
+    };
+
+    // Add eventId if provided (for event media)
+    if (eventId) {
+      mediaData.event = eventId;
+    }
+
+    const media = await Media.create(mediaData);
+    
+    // Populate the uploadedBy field
+    await media.populate('uploadedBy', 'firstname lastname username profile');
+    
+    res.status(201).json({ 
+      success: true, 
+      media,
+      message: 'Media uploaded successfully'
+    });
+    
+  } catch (error) {
+    console.error('Error uploading media:', error);
+    
+    // If there was a Cloudinary upload, try to clean it up
+    if (req.uploadResult && req.uploadResult.publicId) {
+      await deleteFromCloudinary(req.uploadResult.publicId).catch(console.error);
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload media',
+      error: error.message
+    });
   }
-
-  // Add thumbnail if provided
-  if (thumbnailUrl) {
-    mediaData.thumbnailUrl = thumbnailUrl;
-  }
-
-  const media = await Media.create(mediaData);
-  res.status(201).json({ success: true, media });
 };
 
 export const eventMedia = async (req, res) => {
@@ -214,20 +274,47 @@ export const updateMedia = async (req, res) => {
 };
 
 export const deleteMedia = async (req, res) => {
-  const { id } = req.params;
-  const media = await Media.findById(id);
-  if (!media) return res.status(404).json({ success: false, message: 'Media not found' });
+  try {
+    const { id } = req.params;
+    const media = await Media.findById(id);
+    
+    if (!media) {
+      return res.status(404).json({ success: false, message: 'Media not found' });
+    }
 
-  // Check if user is the owner or has admin/organizer role
-  const isOwner = media.uploadedBy.toString() === req.user._id.toString();
-  const isAdminOrOrganizer = ['admin', 'organizer'].includes(req.user.role);
+    // Check if user is the owner or has admin/organizer role
+    const isOwner = media.uploadedBy.toString() === req.user._id.toString();
+    const isAdminOrOrganizer = ['admin', 'organizer'].includes(req.user.role);
 
-  if (!isOwner && !isAdminOrOrganizer) {
-    return res.status(403).json({ success: false, message: 'Unauthorized to delete this media' });
+    if (!isOwner && !isAdminOrOrganizer) {
+      return res.status(403).json({ success: false, message: 'Unauthorized to delete this media' });
+    }
+
+    // Delete from Cloudinary if publicId exists
+    if (media.publicId) {
+      const cloudinaryResult = await deleteFromCloudinary(media.publicId);
+      if (!cloudinaryResult.success) {
+        console.warn('Failed to delete from Cloudinary:', cloudinaryResult.error);
+        // Continue with database deletion even if Cloudinary deletion fails
+      }
+    }
+
+    // Delete from database
+    await Media.findByIdAndDelete(id);
+    
+    res.json({ 
+      success: true, 
+      message: 'Media deleted successfully' 
+    });
+    
+  } catch (error) {
+    console.error('Error deleting media:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete media',
+      error: error.message
+    });
   }
-
-  await Media.findByIdAndDelete(id);
-  res.json({ success: true, message: 'Media deleted successfully' });
 };
 
 export const likeMedia = async (req, res) => {

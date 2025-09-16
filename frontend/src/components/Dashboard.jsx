@@ -62,6 +62,29 @@ const Dashboard = () => {
     }
   }, [isAuthenticated, user]);
 
+  // Refresh dashboard data when user returns to the tab/page
+  useEffect(() => {
+    const handleFocus = () => {
+      if (isAuthenticated && user && !loading) {
+        fetchDashboardData();
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isAuthenticated && user && !loading) {
+        fetchDashboardData();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isAuthenticated, user, loading]);
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);

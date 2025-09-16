@@ -20,6 +20,10 @@ const mediaSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  publicId: {
+    type: String,
+    required: false // Cloudinary public ID for deletion
+  },
   uploadedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
