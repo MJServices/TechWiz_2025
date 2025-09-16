@@ -99,12 +99,17 @@ const Dashboard = () => {
         stats = await statsService.getAdminStats();
       }
 
-      setUserStats({
+      console.log("Dashboard Stats Response:", stats);
+      
+      const newUserStats = {
         registeredEvents: stats.registrations?.total || 0,
         attendedEvents: stats.completedEvents?.total || stats.attendance?.present || 0,
         certificatesEarned: stats.certificates?.total || 0,
         savedEvents: stats.bookmarks?.events || 0,
-      });
+      };
+      
+      console.log("Setting user stats:", newUserStats);
+      setUserStats(newUserStats);
 
       // Fetch recent registrations for activity
       if (user.role === 'participant') {
@@ -241,6 +246,17 @@ const Dashboard = () => {
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-8">
+          {/* Debug Info - Remove after fixing */}
+          {!loading && (
+            <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-xl">
+              <h3 className="text-red-300 font-bold mb-2">Debug Info (Remove after fixing):</h3>
+              <p className="text-red-200 text-sm">userStats: {JSON.stringify(userStats, null, 2)}</p>
+              <p className="text-red-200 text-sm">user role: {user?.role}</p>
+              <p className="text-red-200 text-sm">loading: {loading.toString()}</p>
+              <p className="text-red-200 text-sm">upcomingEvents length: {upcomingEvents.length}</p>
+            </div>
+          )}
+
           {/* Header Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}

@@ -156,7 +156,11 @@ const Events = () => {
         const res = await eventsAPI.getAll(params);
         console.log("Fetched events:", res.events);
 
+        console.log("Events API Response:", res);
+        console.log("Events Array:", res.events);
+        
         if (res.events && Array.isArray(res.events)) {
+          console.log("Setting events:", res.events.length, "events found");
           setEvents(res.events);
           setFilteredEvents(res.events);
           // Extract filter options from events
@@ -165,6 +169,7 @@ const Events = () => {
           const eventIds = res.events.map(event => event._id);
           fetchBookmarkStatus(eventIds);
         } else {
+          console.log("No events array found in response:", res);
           setEvents([]);
           setFilteredEvents([]);
           setError("No events data received from server");
@@ -673,6 +678,20 @@ const Events = () => {
           </div>
         </div>
 
+        {/* Debug Info - Remove after fixing */}
+        {!loading && (
+          <div className="mb-6 p-4 bg-red-900/20 border border-red-500/30 rounded-xl">
+            <h3 className="text-red-300 font-bold mb-2">Debug Info (Remove after fixing):</h3>
+            <p className="text-red-200 text-sm">filteredEvents length: {filteredEvents.length}</p>
+            <p className="text-red-200 text-sm">events length: {events.length}</p>
+            <p className="text-red-200 text-sm">loading: {loading.toString()}</p>
+            <p className="text-red-200 text-sm">error: {error || "null"}</p>
+            {filteredEvents.length > 0 && (
+              <p className="text-red-200 text-sm">First event: {filteredEvents[0]?.title || "No title"}</p>
+            )}
+          </div>
+        )}
+
         {/* Events Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
           {filteredEvents.map((event, index) => (
@@ -865,10 +884,7 @@ const Events = () => {
                     <Eye className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
             </motion.div>
-              </div>
-            </div>
           ))}
         </div>
 

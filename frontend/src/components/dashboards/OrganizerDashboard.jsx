@@ -64,6 +64,9 @@ const OrganizerDashboard = () => {
         eventsAPI.getAll({ organizer: user._id })
       ]);
 
+      console.log('Stats Response:', statsResponse);
+      console.log('Events Response:', eventsResponse);
+      
       setOrganizerStats(statsResponse);
       setMyEvents(eventsResponse.events || []);
     } catch (error) {
@@ -184,40 +187,50 @@ const OrganizerDashboard = () => {
             </div>
           </motion.div>
 
+          {/* Debug Info - Remove after fixing */}
+          {!loading && (
+            <div className="mb-4 p-4 bg-red-900/20 border border-red-500/30 rounded-xl">
+              <h3 className="text-red-300 font-bold mb-2">Debug Info (Remove after fixing):</h3>
+              <p className="text-red-200 text-sm">organizerStats: {JSON.stringify(organizerStats, null, 2)}</p>
+              <p className="text-red-200 text-sm">myEvents length: {myEvents.length}</p>
+              <p className="text-red-200 text-sm">loading: {loading.toString()}</p>
+            </div>
+          )}
+
           {/* Stats Overview */}
-          {organizerStats && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="mb-8"
-            >
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="mb-8"
+          >
+            {!loading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
                   {
                     title: 'My Events',
-                    value: organizerStats.events?.myEvents || 0,
+                    value: organizerStats?.events?.myEvents || organizerStats?.events?.total || 0,
                     icon: Calendar,
                     color: 'from-purple-500 to-purple-600',
                     bgColor: 'from-purple-500/20 to-purple-600/20',
                   },
                   {
                     title: 'Total Registrations',
-                    value: organizerStats.registrations?.total || 0,
+                    value: organizerStats?.registrations?.total || 0,
                     icon: Users,
                     color: 'from-cyan-500 to-blue-500',
                     bgColor: 'from-cyan-500/20 to-blue-500/20',
                   },
                   {
                     title: 'Certificates Issued',
-                    value: organizerStats.certificates?.total || 0,
+                    value: organizerStats?.certificates?.total || 0,
                     icon: Award,
                     color: 'from-yellow-500 to-orange-500',
                     bgColor: 'from-yellow-500/20 to-orange-500/20',
                   },
                   {
                     title: 'Total Views',
-                    value: organizerStats.views?.total || 0,
+                    value: organizerStats?.views?.total || 0,
                     icon: Eye,
                     color: 'from-green-500 to-teal-500',
                     bgColor: 'from-green-500/20 to-teal-500/20',
@@ -243,8 +256,18 @@ const OrganizerDashboard = () => {
                   </motion.div>
                 ))}
               </div>
-            </motion.div>
-          )}
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/20 shadow-2xl animate-pulse">
+                    <div className="h-6 bg-white/20 rounded mb-4"></div>
+                    <div className="h-8 bg-white/20 rounded mb-2"></div>
+                    <div className="h-4 bg-white/20 rounded"></div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
 
           {/* Tabs */}
           <motion.div
@@ -568,18 +591,17 @@ const OrganizerDashboard = () => {
                       Event Analytics
                     </h2>
 
-                    {organizerStats && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div className="bg-white/5 rounded-xl p-6 border border-white/10">
                           <h3 className="text-lg font-semibold text-white mb-4">Attendance Rate</h3>
                           <div className="text-center">
                             <div className="text-4xl font-bold text-green-400 mb-2">
-                              {organizerStats.attendance?.present && organizerStats.attendance?.present + organizerStats.attendance?.absent > 0
+                              {organizerStats?.attendance?.present && organizerStats?.attendance?.present + organizerStats?.attendance?.absent > 0
                                 ? Math.round((organizerStats.attendance.present / (organizerStats.attendance.present + organizerStats.attendance.absent)) * 100)
                                 : 0}%
                             </div>
                             <p className="text-gray-400 text-sm">
-                              {organizerStats.attendance?.present || 0} present, {organizerStats.attendance?.absent || 0} absent
+                              {organizerStats?.attendance?.present || 0} present, {organizerStats?.attendance?.absent || 0} absent
                             </p>
                           </div>
                         </div>
@@ -588,12 +610,12 @@ const OrganizerDashboard = () => {
                           <h3 className="text-lg font-semibold text-white mb-4">Registration Rate</h3>
                           <div className="text-center">
                             <div className="text-4xl font-bold text-blue-400 mb-2">
-                              {organizerStats.registrations?.approved && organizerStats.registrations?.total > 0
+                              {organizerStats?.registrations?.approved && organizerStats?.registrations?.total > 0
                                 ? Math.round((organizerStats.registrations.approved / organizerStats.registrations.total) * 100)
                                 : 0}%
                             </div>
                             <p className="text-gray-400 text-sm">
-                              {organizerStats.registrations?.approved || 0} approved of {organizerStats.registrations?.total || 0} total
+                              {organizerStats?.registrations?.approved || 0} approved of {organizerStats?.registrations?.total || 0} total
                             </p>
                           </div>
                         </div>
@@ -602,13 +624,12 @@ const OrganizerDashboard = () => {
                           <h3 className="text-lg font-semibold text-white mb-4">Event Views</h3>
                           <div className="text-center">
                             <div className="text-4xl font-bold text-purple-400 mb-2">
-                              {organizerStats.views?.total || 0}
+                              {organizerStats?.views?.total || 0}
                             </div>
                             <p className="text-gray-400 text-sm">Total event page views</p>
                           </div>
                         </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </div>
