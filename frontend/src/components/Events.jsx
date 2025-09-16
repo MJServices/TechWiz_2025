@@ -674,59 +674,103 @@ const Events = () => {
         </div>
 
         {/* Events Grid */}
-        <div className="grid grid-cols-3 gap-4 lg:gap-6 xl:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
           {filteredEvents.map((event, index) => (
-            <div
+            <motion.div
               key={event._id}
-              className="card card-hover group"
-              style={{ animationDelay: `${index * 100}ms` }}
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ 
+                duration: 0.5, 
+                delay: index * 0.1,
+                ease: "easeOut"
+              }}
+              className="group relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl hover:shadow-purple-500/20 hover:scale-105 transition-all duration-500 overflow-hidden"
             >
-              {/* Event Image */}
-              <div className="relative h-48 overflow-hidden">
+              {/* Event Image with Gradient Overlay */}
+              <div className="relative h-52 overflow-hidden rounded-t-3xl">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent z-10"></div>
                 <img
                   src={event.bannerImage || "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=500"}
                   alt={event.title || "Event"}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   onError={(e) => {
                     e.target.src = "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=500";
                   }}
                 />
-                <div className="absolute top-4 left-4">
-                  <span className="badge badge-primary">
+                
+                {/* Floating Category Badge */}
+                <div className="absolute top-4 left-4 z-20">
+                  <span className="px-3 py-1 bg-gradient-to-r from-purple-500/90 to-pink-500/90 backdrop-blur-lg rounded-full text-white text-xs font-semibold shadow-lg">
                     {event.category || "Event"}
                   </span>
                 </div>
-                <div className="absolute top-4 right-4">
+                
+                {/* Status Badge */}
+                <div className="absolute top-4 right-4 z-20">
                   <EventStatusBadge event={event} size="sm" />
                 </div>
+
+                {/* Bookmark Button Overlay */}
+                {isAuthenticated && (
+                  <div className="absolute bottom-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleBookmarkToggle(event._id);
+                      }}
+                      className={`p-3 rounded-2xl transition-all duration-500 transform hover:scale-110 focus:outline-none ${
+                        bookmarkedEvents.has(event._id)
+                          ? "bg-gradient-to-br from-blue-500/90 to-cyan-500/90 backdrop-blur-xl text-white shadow-xl"
+                          : "bg-gradient-to-br from-white/20 to-white/10 backdrop-blur-xl border border-white/30 text-white hover:border-blue-400/50"
+                      }`}
+                    >
+                      <Bookmark className={`w-4 h-4 ${bookmarkedEvents.has(event._id) ? "fill-current" : ""}`} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Event Content */}
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-3 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-cyan-400 group-hover:bg-clip-text transition-all duration-300">
+              <div className="p-6 flex-1 flex flex-col">
+                {/* Event Title */}
+                <h3 className="text-xl font-bold mb-3 leading-tight group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-400 group-hover:to-cyan-400 group-hover:bg-clip-text transition-all duration-300 line-clamp-2">
                   {event.title || "Untitled Event"}
                 </h3>
 
-                <p className="text-gray-300 text-sm mb-4 line-clamp-3">
+                {/* Event Description */}
+                <p className="text-gray-300 text-sm mb-4 line-clamp-2 flex-grow">
                   {event.description || "No description available."}
                 </p>
 
-                {/* Event Details */}
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center text-sm text-gray-400">
-                    <Calendar className="w-4 h-4 mr-2" />
-                    {event.date ? new Date(event.date).toLocaleDateString() : "Date TBD"}
+                {/* Event Meta Info */}
+                <div className="space-y-3 mb-6">
+                  {/* Date & Time Row */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center text-sm text-gray-300">
+                      <div className="p-2 bg-purple-500/20 rounded-lg mr-3">
+                        <Calendar className="w-4 h-4 text-purple-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-white">{event.date ? new Date(event.date).toLocaleDateString() : "Date TBD"}</p>
+                        <p className="text-xs text-gray-400">{event.time || "Time TBD"}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center text-sm text-gray-400">
-                    <Clock className="w-4 h-4 mr-2" />
-                    {event.time || "Time TBD"}
+                  
+                  {/* Venue Row */}
+                  <div className="flex items-center text-sm text-gray-300">
+                    <div className="p-2 bg-cyan-500/20 rounded-lg mr-3">
+                      <MapPin className="w-4 h-4 text-cyan-400" />
+                    </div>
+                    <span className="font-medium text-white line-clamp-1">{event.venue || "Venue TBD"}</span>
                   </div>
-                  <div className="flex items-center text-sm text-gray-400">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {event.venue || "Venue TBD"}
-                  </div>
+
+                  {/* Seats Info */}
                   <div className="flex items-center text-sm">
-                    <Users className="w-4 h-4 mr-2" />
+                    <div className="p-2 bg-green-500/20 rounded-lg mr-3">
+                      <Users className="w-4 h-4 text-green-400" />
+                    </div>
                     {(() => {
                       const totalSeats = event.maxSeats || 0;
                       const registered = event.slotCounts?.confirmed || 0;
@@ -738,7 +782,7 @@ const Events = () => {
                         <div className="flex flex-col">
                           {isLimited ? (
                             <>
-                              <span className={`font-semibold ${isFull ? 'text-red-400' : remaining <= 5 ? 'text-orange-400' : 'text-green-400'}`}>
+                              <span className={`font-semibold text-sm ${isFull ? 'text-red-400' : remaining <= 5 ? 'text-orange-400' : 'text-green-400'}`}>
                                 {isFull ? 'Event Full' : `${remaining} seats left`}
                               </span>
                               <span className="text-xs text-gray-400">
@@ -746,7 +790,7 @@ const Events = () => {
                               </span>
                             </>
                           ) : (
-                            <span className="text-green-400 font-medium">Unlimited seats</span>
+                            <span className="text-green-400 font-medium text-sm">Unlimited seats</span>
                           )}
                         </div>
                       );
@@ -755,19 +799,26 @@ const Events = () => {
                 </div>
 
                 {/* Tags */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {(event.tags || []).slice(0, 3).map((tag, tagIndex) => (
-                    <span
-                      key={tagIndex}
-                      className="px-2 py-1 bg-white/10 rounded-full text-xs text-gray-300 hover:bg-white/20 hover:text-white transition-all duration-300 hover:scale-105 cursor-pointer"
-                    >
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
+                {(event.tags && event.tags.length > 0) && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {event.tags.slice(0, 2).map((tag, tagIndex) => (
+                      <span
+                        key={tagIndex}
+                        className="px-2 py-1 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 rounded-full text-xs text-purple-300 font-medium"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                    {event.tags.length > 2 && (
+                      <span className="px-2 py-1 bg-white/10 border border-white/20 rounded-full text-xs text-gray-400">
+                        +{event.tags.length - 2} more
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {/* Action Buttons */}
-                <div className="flex gap-3">
+                <div className="flex gap-3 mt-auto">
                   {isAuthenticated ? (
                     <button
                       onClick={() => handleRegister(event._id)}
@@ -775,24 +826,24 @@ const Events = () => {
                         event.status === "completed" ||
                         (event.slotsLeft !== null && event.slotsLeft <= 0)
                       }
-                      className={`flex-1 px-4 py-2 rounded-xl font-semibold transition-all duration-300 ${
+                      className={`flex-1 flex items-center justify-center px-4 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 ${
                         event.isRegistered
-                          ? "badge badge-success"
+                          ? "bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/30 text-green-300 shadow-lg shadow-green-500/20"
                           : (event.slotsLeft !== null && event.slotsLeft <= 0)
-                          ? "bg-gray-500 cursor-not-allowed"
-                          : "btn btn-primary"
-                      } transform hover:scale-105 disabled:hover:scale-100`}
+                          ? "bg-gray-500/20 border border-gray-500/30 text-gray-400 cursor-not-allowed"
+                          : "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg shadow-purple-500/30"
+                      }`}
                     >
                       {event.isRegistered ? (
                         <>
-                          <Award className="w-4 h-4 mr-2 inline" />
+                          <Award className="w-4 h-4 mr-2" />
                           Registered
                         </>
                       ) : (event.slotsLeft !== null && event.slotsLeft <= 0) ? (
                         "Full"
                       ) : (
                         <>
-                          <BookOpen className="w-4 h-4 mr-2 inline" />
+                          <BookOpen className="w-4 h-4 mr-2" />
                           Register
                         </>
                       )}
@@ -800,48 +851,22 @@ const Events = () => {
                   ) : (
                     <button
                       onClick={() => (window.location.href = "/login")}
-                      className="btn btn-primary flex-1 px-4 py-2"
+                      className="flex-1 flex items-center justify-center px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-2xl font-semibold shadow-lg shadow-purple-500/30 transition-all duration-300 transform hover:scale-105"
                     >
-                      <BookOpen className="w-4 h-4 mr-2 inline" />
+                      <BookOpen className="w-4 h-4 mr-2" />
                       Login to Register
-                    </button>
-                  )}
-
-                  {/* Bookmark Button */}
-                  {isAuthenticated && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleBookmarkToggle(event._id);
-                      }}
-                      className={`group relative p-3 rounded-2xl transition-all duration-500 transform hover:scale-110 hover:rotate-6 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:ring-offset-2 focus:ring-offset-slate-900 ${
-                        bookmarkedEvents.has(event._id)
-                          ? "bg-gradient-to-br from-blue-500/90 to-cyan-500/90 backdrop-blur-xl text-white shadow-2xl shadow-blue-500/40 border border-blue-400/30"
-                          : "bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 text-gray-300 hover:border-blue-400/50 hover:text-blue-300 hover:shadow-xl hover:shadow-blue-500/20"
-                      }`}
-                      aria-label={bookmarkedEvents.has(event._id) ? "Remove bookmark" : "Bookmark event"}
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/10 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <Bookmark
-                        className={`w-5 h-5 relative z-10 transition-all duration-300 ${
-                          bookmarkedEvents.has(event._id)
-                            ? "fill-current animate-pulse"
-                            : "group-hover:fill-blue-300"
-                        }`}
-                      />
-                      {bookmarkedEvents.has(event._id) && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-ping"></div>
-                      )}
                     </button>
                   )}
 
                   <button
                     onClick={() => navigate(`/events/${event._id}`)}
-                    className="btn btn-outline"
+                    className="px-4 py-3 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 text-gray-300 hover:border-cyan-400/50 hover:text-cyan-300 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105"
                   >
-                    View Details
+                    <Eye className="w-4 h-4" />
                   </button>
                 </div>
+              </div>
+            </motion.div>
               </div>
             </div>
           ))}
